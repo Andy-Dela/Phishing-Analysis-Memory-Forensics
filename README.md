@@ -47,7 +47,7 @@ Opening the document triggered a download from a remote server.
 
   The PID of the malicious process used to establish the C2 connection: 6216
   
- <img src=" https://i.imgur.com/x53GBxQ.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+ <img src="https://i.imgur.com/x53GBxQ.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
 
  <h3>Memory Analysis & Persistence</h3>
 
