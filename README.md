@@ -1,62 +1,82 @@
-# Phishing Analysis And Memory Forensics
+# Phishing Analysis & Memory Forensics
 
-<h2>Project Overview</h2>
-<p>This project documents the end-to-end investigation of a targeted phishing attack against a Human Resources Specialist. The attacker utilized a malicious resume attachment to gain a foothold, establish a Command and Control (C2) callback, and implement advanced persistence mechanisms via scheduled tasks.The investigation covers Email Header Analysis, Artifact Extraction, and Volatile Memory Forensics using the Volatility Framework.</p> </br>
+**Analyst:** Andy Dela Quarshie Wright  
+**Role:** SOC Level 1 Analyst  
+**Tools:** Thunderbird, olevba, oletools, Volatility, strings  
+**Files Analysed:** Resume - Application for Junior IT Analyst Role.eml, Resume_WesleyTaylor.doc, WKSTN-2961.raw  
 
-<h2>Technical Skills Demonstrated</h2>
-<p><b>Email Security</b>:  Analyzing SPF/DKIM/DMARC (via headers) and identifying malicious senders.
+---
 
-<b>Malware Triage</b>:  Calculating MD5 hashes and identifying malicious URLs and domains.
+## Overview
 
-<b>Memory Forensics (Volatility)</b>: Using windows.filescan, windows.pslist, and windows.memmap to extract attacker commands from a RAM dump.
+End-to-end phishing investigation combining email analysis, malicious document inspection, and memory forensics. A phishing email disguised as a job application delivered a macro-enabled Word document to victim maxine.beck@quicklogisticsorg. The macro downloaded and executed malware, established C2 communication, and set up persistence via scheduled tasks. Full attack chain reconstructed using static and dynamic analysis tools.
 
-<b>Persistence Analysis</b>: Identifying malicious scheduled tasks (schtasks) and Base64 encoded PowerShell commands.
- </p> </br>
+---
 
-<h2>Investigation Walktrough</h2>
-<p>
-  <h3>Phishing Triage</h3>
-The attack began with a spoofed job application email.
+## Incident Summary
 
-Attacker Email: westaylor23@outlook.com
-Victim: maxine.beck@quicklogisticsorg.onmicrosoft.com
+| Field | Detail |
+|-------|--------|
+| Victim | maxine.beck@quicklogisticsorg.onmicrosoft.com |
+| Sender | westaylor23@outlook.com |
+| Subject | Resume - Application for Junior IT Analyst Role |
+| Date | Sun, 20 Aug 2023 18:19:20 +0000 |
+| Attachment | Resume_WesleyTaylor.doc |
+| MD5 Hash | 52c4384a0b9e248b95804352ebec6c5b |
+| Malware family | VBA Macro Dropper |
+| C2 domain | boogeymanisback.lol |
+| C2 IP | 128.199.95.189 port 8080 |
+| Persistence | Scheduled task — Updater — daily at 09:00 |
+| Malicious process | updater.exe (PID 6216) |
 
- <img src="https://i.imgur.com/fcIkhU7.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+---
 
- Malicious Attachment: Resume_WesleyTaylor.doc (MD5: 52c4384a0b9e248b95804352ebec6c5b)
- 
- <img src="https://i.imgur.com/5q2RRo9.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+## Investigation Structure
 
- <h3>Malware Delivery & C2</h3>
-Opening the document triggered a download from a remote server.
+- [Phase 1 — Email Analysis](investigation/phishing-analysis.md)
+- [Phase 2 — Memory Forensics](memory-forensics/memory-analysis.md)
+- [IOCs](iocs/iocs.md)
+- [Screenshots](screenshots/)
 
- URL is used to download the stage 2 payload: https://files.boogeymanisback.lol/aa2a9c53cbb80416d3b47d85538d9971/update.png
-  <img src="https://i.imgur.com/kHWZnYw.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+---
 
-  The process that executed the newly downloaded stage 2 payload: wscript.exe
-  
- <img src="https://i.imgur.com/Twwawjp.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+## Attack Chain
 
-  The PID of the process that executed the stage 2 payload: 4260
- 
- <img src="https://i.imgur.com/kxgJQip.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+```
+Phishing email received by maxine.beck
+        ↓
+Resume_WesleyTaylor.doc opened in Microsoft Word
+        ↓
+AutoOpen VBA macro executes on document open
+        ↓
+Macro downloads update.png from boogeymanisback.lol
+        ↓
+Payload saved as C:\ProgramData\update.js
+        ↓
+wscript.exe executes update.js
+        ↓
+updater.exe spawned — connects to 128.199.95.189:8080 (C2)
+        ↓
+Scheduled task created — Updater runs daily at 09:00 (persistence)
+```
 
-  The URL used to download the malicious binary executed by the stage 2 payload: https://files.boogeymanisback.lol/aa2a9c53cbb80416d3b47d85538d9971/update.exe
- 
- <img src="https://i.imgur.com/yyxOCgt.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+---
 
-  The PID of the malicious process used to establish the C2 connection: 6216
-  
- <img src="https://i.imgur.com/x53GBxQ.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+## MITRE ATT&CK Mapping
 
- <h3>Memory Analysis & Persistence</h3>
+| Technique | ID | Description |
+|-----------|-----|-------------|
+| Spearphishing Attachment | T1566.001 | Resume_WesleyTaylor.doc via email |
+| User Execution | T1204.002 | Victim opens malicious Word document |
+| VBA Macro | T1059.005 | AutoOpen macro executes on document open |
+| Ingress Tool Transfer | T1105 | update.png downloaded from boogeymanisback.lol |
+| Scheduled Task | T1053.005 | Updater task for persistence |
+| Command and Control | T1071.001 | updater.exe beaconing to 128.199.95.189:8080 |
 
- The full file path of the malicious email attachment based on the memory dump: C:\Users\maxine.beck\AppData\Local\Microsoft\Windows\INetCache\Content.Outlook\WQHGZCFI\Resume_WesleyTaylor (002).doc
- 
- <img src="https://i.imgur.com/GKyoTnM.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
+---
 
- The full command used by the attacker to maintain persistent access: schtasks /Create /F /SC DAILY /ST 09:00 /TN Updater /TR ‘C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NonI -W hidden -c \”IEX ([Text.Encoding]::UNICODE.GetString([Convert]::FromBase64String((gp HKCU:\Software\Microsoft\Windows\CurrentVersion debug).debug)))\”’
- 
- <img src="https://i.imgur.com/0b7G7AB.png" height="80%" width="80%" alt="Investigation Walkthrough"/>
-  
- </p>
+## Certifications
+
+- CompTIA Security+
+- TryHackMe SOC Level 1
+- Google Cybersecurity Professional Certificate
