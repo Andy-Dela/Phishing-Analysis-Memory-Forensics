@@ -1,18 +1,4 @@
 # Phishing Analysis & Memory Forensics
-
-**Analyst:** Andy Dela Quarshie Wright  
-**Role:** SOC Level 1 Analyst  
-**Tools:** Thunderbird, olevba, oletools, Volatility, strings  
-**Files Analysed:** Resume - Application for Junior IT Analyst Role.eml, Resume_WesleyTaylor.doc, WKSTN-2961.raw  
-
----
-
-## Overview
-
-End-to-end phishing investigation combining email analysis, malicious document inspection, and memory forensics. A phishing email disguised as a job application delivered a macro-enabled Word document to victim maxine.beck@quicklogisticsorg.
-cat > ~/Desktop/Phishing-Analysis-Memory-Forensics/README.md << 'ENDOFFILE'
-# Phishing Analysis & Memory Forensics
-
 **Analyst:** Andy Dela Quarshie Wright  
 **Role:** SOC Level 1 Analyst  
 **Tools:** Thunderbird, olevba, oletools, Volatility, strings  
